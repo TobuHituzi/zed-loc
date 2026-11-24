@@ -50,6 +50,9 @@ jobs:
           ref: ${{ inputs.branch }}
           path: zed
 
+      - name: Apply rescan-worktrees patch
+        run: git -C zed apply ../patches/rescan-worktrees.patch
+
       - name: 替换
         run: python3 replace.py ja/ja-JP.json
 

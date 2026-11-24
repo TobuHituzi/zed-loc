@@ -1,0 +1,95 @@
+diff --git a/crates/project_panel/src/project_panel.rs b/crates/project_panel/src/project_panel.rs
+index 3e31be7..d6bbe49 100644
+--- a/crates/project_panel/src/project_panel.rs
++++ b/crates/project_panel/src/project_panel.rs
+@@ -451,6 +451,8 @@ actions!(
+         SelectPrevDirectory,
+         /// Opens a diff view to compare two marked files.
+         CompareMarkedFiles,
++        /// Forces a re-scan of all local worktrees and refreshes the project panel.
++        RescanWorktrees,
+         /// Undoes the last file operation.
+         Undo,
+         /// Redoes the last undone file operation.
+@@ -563,6 +565,14 @@ pub fn init(cx: &mut App) {
+             }
+         });
+ 
++        workspace.register_action(|workspace, action: &RescanWorktrees, window, cx| {
++            if let Some(panel) = workspace.panel::<ProjectPanel>(cx) {
++                panel.update(cx, |panel, cx| {
++                    panel.rescan_worktrees(action, window, cx);
++                });
++            }
++        });
++
+         workspace.register_action(|workspace, action: &Rename, window, cx| {
+             workspace.open_panel::<ProjectPanel>(window, cx);
+             if let Some(panel) = workspace.panel::<ProjectPanel>(cx) {
+@@ -1685,6 +1695,26 @@ impl ProjectPanel {
+         self.expand_worktree_roots(roots, window, cx);
+     }
+ 
++    fn rescan_worktrees(
++        &mut self,
++        _: &RescanWorktrees,
++        _window: &mut Window,
++        cx: &mut Context<Self>,
++    ) {
++        let worktrees = self
++            .project
++            .read(cx)
++            .visible_worktrees(cx)
++            .collect::<Vec<_>>();
++        for worktree in worktrees {
++            worktree.update(cx, |worktree, _cx| {
++                if let Some(local) = worktree.as_local() {
++                    local.refresh_entries_for_paths(vec![RelPath::empty().into()]);
++                }
++            });
++        }
++    }
++
+     fn expand_all_for_entry_and_refresh(
+         &mut self,
+         worktree_id: WorktreeId,
+@@ -7654,7 +7684,7 @@ impl Render for ProjectPanel {
+                     }
+                 }));
+             }
+-            h_flex()
++            v_flex()
+                 .id("project-panel")
+                 .group("project-panel")
+                 .when(panel_settings.drag_and_drop, |this| {
+@@ -7747,6 +7777,20 @@ impl Render for ProjectPanel {
+                         .on_action(cx.listener(Self::download_from_remote))
+                 })
+                 .track_focus(&self.focus_handle(cx))
++                .child(
++                    h_flex()
++                        .flex_shrink_0()
++                        .justify_end()
++                        .px_1()
++                        .py_0p5()
++                        .child(
++                            IconButton::new("rescan-worktrees", IconName::RotateCw)
++                                .tooltip(Tooltip::text("Rescan Worktrees"))
++                                .on_click(|_, window, cx| {
++                                    window.dispatch_action(RescanWorktrees.boxed_clone(), cx);
++                                }),
++                        ),
++                )
+                 .child(
+                     v_flex()
+                         .child(
+@@ -8137,7 +8181,8 @@ impl Render for ProjectPanel {
+                                     ))
+                                 }),
+                         )
+-                        .size_full(),
++                        .flex_grow_1()
++                        .w_full(),
+                 )
+                 .custom_scrollbars(
+                     {
