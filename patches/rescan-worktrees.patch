@@ -1,5 +1,5 @@
 diff --git a/crates/project_panel/src/project_panel.rs b/crates/project_panel/src/project_panel.rs
-index 3e31be7..d6bbe49 100644
+index 3e31be7..932ca63 100644
 --- a/crates/project_panel/src/project_panel.rs
 +++ b/crates/project_panel/src/project_panel.rs
 @@ -451,6 +451,8 @@ actions!(
@@ -83,13 +83,47 @@ index 3e31be7..d6bbe49 100644
                  .child(
                      v_flex()
                          .child(
-@@ -8137,7 +8181,8 @@ impl Render for ProjectPanel {
+@@ -8137,7 +8181,9 @@ impl Render for ProjectPanel {
                                      ))
                                  }),
                          )
 -                        .size_full(),
 +                        .flex_grow_1()
++                        .min_h_0()
 +                        .w_full(),
                  )
                  .custom_scrollbars(
                      {
+diff --git a/crates/workspace/src/workspace.rs b/crates/workspace/src/workspace.rs
+index f194480..0ea32e9 100644
+--- a/crates/workspace/src/workspace.rs
++++ b/crates/workspace/src/workspace.rs
+@@ -11839,6 +11839,28 @@ pub fn open_paths(
+             }
+         }
+ 
++        // Fork patch (zed-loc): second-chance reuse for externally opened
++        // files. Some environments (notably FUSE/network mounts on Windows)
++        // report file metadata in ways that make the fallback above miss,
++        // so every externally opened file lands in a new window. If the OS
++        // says every requested path is a file and a local workspace window
++        // exists, open the files there, unless a new window was explicitly
++        // requested (workspace matching disabled or NewWindow mode).
++        if reuse_target.is_none()
++            && open_options.workspace_matching != WorkspaceMatching::None
++            && open_options.open_mode != OpenMode::NewWindow
++            && !abs_paths.is_empty()
++            && abs_paths
++                .iter()
++                .all(|path| std::fs::metadata(path).map(|m| m.is_file()).unwrap_or(false))
++        {
++            reuse_target = cx
++                .update(|cx| {
++                    preferred_workspace_target(&ProjectHost::Local, OpenVisible::None, cx)
++                })
++                .or(reuse_target);
++        }
++
+         // Fallback for directories: when no flag is specified and no existing
+         // workspace matched, check the user's setting to decide whether to add
+         // the directory as a new workspace in the active window's MultiWorkspace
