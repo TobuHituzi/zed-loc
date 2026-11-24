@@ -30,7 +30,7 @@ for file_path, replacements in json_data.items():
     # 替换非空值
     for original, new_value in replacements.items():
         if new_value:  # 如果值不为空
-            content = re.sub(rf'"{re.escape(original)}"', f'"{new_value}"', content)
+            content = re.sub(rf'"{re.escape(original)}"', lambda _m: f'"{new_value}"', content)
 
     # 将修改后的内容写回文件
     with open(file_path, 'w', encoding='utf-8') as file:
