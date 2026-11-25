@@ -53,6 +53,10 @@ jobs:
       - name: Apply rescan-worktrees patch
         run: git -C zed apply ../patches/rescan-worktrees.patch
 
+      - name: Use stable (black) app icon instead of dev icon
+        shell: pwsh
+        run: Copy-Item zed/crates/zed/resources/windows/app-icon.ico zed/crates/zed/resources/windows/app-icon-dev.ico -Force
+
       - name: 替换
         run: python3 replace.py ja/ja-JP.json
 
