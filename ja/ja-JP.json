@@ -4225,7 +4225,7 @@
   "test::TestAction": "",
   "cmd-n": "",
   "ProjectPanel": "",
-  "Workspace": "ワークスペース"
+  "Workspace": ""
  },
  "zed/crates/gpui/src/platform/linux/platform.rs": {
   "wayland": "",
@@ -6822,10 +6822,10 @@
  },
  "zed/crates/refineable/derive_refineable/src/derive_refineable.rs": {
   "refineable": "",
-  "Debug": "デバッグ",
+  "Debug": "",
   "{}Refinement": "",
   "This derive macro only supports structs with named fields": "このderiveマクロは、名前付きフィールドを持つ構造体のみをサポートしています。",
-  "Option": "オプション",
+  "Option": "",
   "Expected struct type for a refineable field": "精製可能なフィールドの想定構造体型"
  },
  "zed/crates/repl/src/components/kernel_options.rs": {
@@ -8352,7 +8352,7 @@
   "Inline Assist": "インライン・アシスト",
   "Close Terminal Tab": "ターミナルタブを閉じる",
   "ctrl-cmd-space": "",
-  "Terminal": "ターミナル",
+  "Terminal": "",
   "vi_mode": "",
   "screen": "",
   "alt": "",
@@ -9456,7 +9456,7 @@
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.": "",
   "theme-preview-nav": "",
   "theme-preview": "",
-  "ThemePreview": "テーマプレビュー"
+  "ThemePreview": ""
  },
  "zed/crates/workspace/src/workspace.rs": {
   "ZED_WINDOW_SIZE": "",
@@ -9510,7 +9510,7 @@
   "Failed to save": "保存に失敗しました",
   "Failed to load the database file.": "データベースファイルの読み込みに失敗しました。",
   "File an Issue": "問題を報告する",
-  "Workspace": "ワークスペース",
+  "Workspace": "",
   "keyboard_layout": "",
   "workspace": "",
   "creator is missing": "作成者が見つかりません",
