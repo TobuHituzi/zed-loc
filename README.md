@@ -1,152 +1,51 @@
-<!---![zed](https://avatars.githubusercontent.com/u/79345384?s=200&v=4)--->
-# 🌏 zed-loc (Zed 汉化)
+# zed-loc フォーク版 ― 日本語化＋ワークツリー再スキャン付き Zed for Windows
 
- [![GitHub issues][issues-image]][issues-url]
- [![Github Pulls][pulls-image]][pulls-url]
- [![GitHub stars][stars-image]][stars-url]
- [![GitHub forks][forks-image]][forks-url]
- [![Github Downloads][download-image]][download-url]
- [![license][license-image]][license-url]
- ![repo-size][repo-size-image]
+[TC999/zed-loc](https://github.com/TC999/zed-loc) の個人用フォークです。
+[zed-industries/zed](https://github.com/zed-industries/zed)（main ブランチ）のソースに、ワークツリー再スキャン機能と日本語化を加えて、Windows 用の `zed.exe` をビルドします。
 
-**简体中文**|[English](README.en.md)|[日本語](README.ja.md)|[한국어](README.ko.md)
+## 目的
 
-## 项目简介
+Windows で rclone マウントしたフォルダを Zed のローカルフォルダとして開いて使っていると、サーバー側でファイルを変更してもファイルウォッチャーのイベントが発生せず、プロジェクトパネルが古い表示のままになります（上流の issue [zed-industries/zed#38109](https://github.com/zed-industries/zed/issues/38109)）。
 
-`zed-loc` 是一个用于本地化 [Zed 编辑器][zed-url]的工具。它提取源代码中的字符串并生成 JSON 文件，以便进行翻译和本地化，同时支持替换后直接构建可执行文件。
+公式ビルドにはパネルを手動で読み直す手段がないため、「再スキャン機能」と「日本語 UI」を持った自分専用のビルドを作るのがこのフォークの目的です。
 
-## 问题反馈
+## 上流からの変更点
 
-**只**接受汉化相关反馈，除非你确定该问题由汉化引起，否则请前往 [Zed 编辑器][zed-issues-url]反馈
+### 1. ワークツリー再スキャン（`patches/rescan-worktrees.patch`）
 
-## 特性
+- `RescanWorktrees` アクションを追加（上流 PR #48871 がベース）
+- プロジェクトパネルの上部に再読み込みボタンを追加
+- そのヘッダー行の追加でパネルのスクロールが効かなくなったため、レイアウト修正（`min_h_0`）も含む
 
-- 自动提取源代码中的字符串
-- 生成 JSON 文件，便于翻译
-- GitHub Actions 集成，自动构建和发布
-- 目前每晚自动执行一次汉化构建
+### 2. 既存ウィンドウ再利用の強制パッチ
 
-## 运行
-### 配置
-请确保您已安装 Python3 和 Rust。
+エクスプローラーなどからファイルを開いたときに、既定の挙動では新しいウィンドウが開いてしまうことがある問題への対策として、既存ウィンドウを再利用するよう強制するパッチを当てています。
 
-运行以下命令克隆项目，或直接点击右上角“代码”下载压缩包：
+### 3. 日本語化
 
-```bash
-git clone https://github.com/tc999/zed-loc.git
-cd zed-loc
-```
-### 提取词条
+- 辞書は `ja/ja-JP.json`。PLaMo 翻訳スクリプトで UI 文字列を1件ずつ翻訳して構築
+- **識別子保護ルール**：キーコンテキスト、コード内で比較される識別子、SQL の断片など、「翻訳すると動作が壊れる文字列」は訳しません。過去に翻訳が原因で壊れた事例と対策の一覧は [INCIDENTS.md](INCIDENTS.md) を参照
+- 辞書の適用は `replace.py`（正規表現ベースの置換）と `replace_ast.py`（AST ベースの置換）で行います
 
-> [!note]
->
-> 注意：提取词条只能在 Windows 系统上运行，在 Linux，Macos 上会报错。
+### 4. ビルド構成
 
-首先你需要自行同步 Zed 源码到本地：
+- ワークフローは Windows ビルドのみに整理
+- 公式のようなインストーラーは作らず、単体の `zed.exe` を GitHub Release のアセット（`zed-windows.zip`）として公開
 
-```bash
-git clone https://github.com/zed-industries/zed.git
-```
+## ビルド方法
 
-提取词条，默认保存至`strings.json`文件：
-```bash
-python3 extract.py
-```
-删除多余词条，删除规则保存在`del.yaml`文件中：
-```bash
-python3 delete.py
-```
+GitHub Actions の「日本語版」ワークフロー（`.github/workflows/build-jp.yml`）を手動実行します。
 
-### 翻译词条
-> [!caution]
->
-> 警告：提取脚本规则是将引号内所有内容全部提取，翻译时请对照 Zed 源码翻译，同时留意不需要翻译的内容。
-> 如有不需要翻译的词条请直接删除
+- 入力 `branch`：ビルドする zed 本体のブランチ（既定は `main`）
+- 入力 `release`：`true` にすると成果物が Release に発行される
+- 成果物：`zed.exe`（Actions のアーティファクト `zed-release`、または Release の `zed-windows.zip`）
 
-翻译方法：丢给 GPT 机翻，再进行人工修正
+## 既知の制限
 
-然后将`strings.json`文件另存为，以目标语言代码为文件名，词条翻译完成后，执行以下命令替换词条：
-```bash
-python3 replace.py
-```
+- `zed.exe` は未署名のため、初回起動時に SmartScreen の警告が出ます
+- 自動アップデートはありません。更新は新しいビルドの `zed.exe` で手動で上書きしてください
+- 設定ファイルは公式と同じく `%APPDATA%\Zed\settings.json` です
 
-### 构建
-如果编译报错，删除 Zed 源码后重新克隆
+## ライセンス
 
-```bash
-cd zed
-cargo run
-```
-
-确保能够正常编译运行。
-
-# 鸣谢
-
-- [Zed](https://github.com/zed-industries/zed) - Zed 编辑器的所有贡献者
-- [deevus/zed-windows-builds](https://github.com/deevus/zed-windows-builds) - Zed Windows 构建脚本参考
-- [Nriver/zed-translation](https://github.com/Nriver/zed-translation) - 提供思路
-- [GitHub Copilot](https://github.com/copilot) - 脚本编写
-
-## 感谢所有贡献者
-
-一如既往，感谢我们出色的贡献者❤️！
-
-<a href="https://github.com/TC999" title="陈生杂物房">
-  <img src="https://avatars.githubusercontent.com/u/88823709?v=4" width="42;" alt="陈生杂物房"/>
-</a>
-<a href="https://github.com/zhai23" title="shuishan">
-  <img src="https://avatars.githubusercontent.com/u/64952459?v=4" width="42;" alt="shuishan"/>
-</a>
-<a href="https://github.com/shenjackyuanjie" title="shenjack">
-  <img src="https://avatars.githubusercontent.com/u/54507071?v=4" width="42;" alt="shenjack"/>
-</a>
-<a href="https://github.com/oper0" title="oper0">
-  <img src="https://avatars.githubusercontent.com/u/204131036?v=4" width="42;" alt="oper0"/>
-</a>
-<a href="https://github.com/fage520" title="fage520">
-  <img src="https://avatars.githubusercontent.com/u/58712266?v=4" width="42;" alt="fage520"/>
-</a>
-<a href="https://github.com/reigadegr" title="reigadegr">
-  <img src="https://avatars.githubusercontent.com/u/103645642?v=4" width="42;" alt="reigadegr"/>
-</a>
-<a href="https://github.com/21307369" title="21307369">
-  <img src="https://avatars.githubusercontent.com/u/47931342?v=4" width="42;" alt="21307369"/>
-</a>
-<a href="https://github.com/lsmir3" title="lsmir3">
-  <img src="https://avatars.githubusercontent.com/u/152374006?v=4" width="42;" alt="lsmir3"/>
-</a>
-
-# 许可证
-
-本项目基于 [MIT 许可证](LICENSE)发布，允许任何组织和个人免费使用。
-
-[issues-url]: https://github.com/TC999/zed-loc/issues "议题"
-[issues-image]: https://img.shields.io/github/issues/TC999/zed-loc?style=flat-square&logo=github&label=议题
-
-[pulls-url]: https://github.com/TC999/zed-loc/pulls "拉取请求"
-[pulls-image]: https://img.shields.io/github/issues-pr-raw/TC999/zed-loc?style=flat&logo=github&%3Fcolor%3Dgreen&label=%E6%8B%89%E5%8F%96%E8%AF%B7%E6%B1%82
-
-[stars-url]: https://github.com/TC999/zed-loc/stargazers "星标"
-[stars-image]: https://img.shields.io/github/stars/TC999/zed-loc?style=flat-square&logo=github&label=星标
-
-[forks-url]: https://github.com/TC999/zed-loc/fork "复刻"
-[forks-image]: https://img.shields.io/github/forks/TC999/zed-loc?style=flat-square&logo=github&label=复刻
-
-[discussions-url]: https://github.com/TC999/zed-loc/discussions "讨论"
-
-[hits-url]: https://hits.dwyl.com/ "访问量"
-[hits-image]: https://custom-icon-badges.demolab.com/endpoint?url=https%3A%2F%2Fhits.dwyl.com%2FTC999%2Fzed-loc.json%3Fcolor%3Dgreen&label=%E8%AE%BF%E9%97%AE%E9%87%8F&logo=graph
-
-[repo-url]: https://github.com/TC999/zed-loc "仓库地址"
-
-[repo-size-image]:https://img.shields.io/github/repo-size/TC999/zed-loc?style=flat-square&label=%E4%BB%93%E5%BA%93%E5%A4%A7%E5%B0%8F
-
-
-[download-url]: https://github.com/TC999/zed-loc/releases/latest "下载"
-[download-image]: https://img.shields.io/github/downloads/TC999/zed-loc/total?style=flat-square&logo=github&label=%E6%80%BB%E4%B8%8B%E8%BD%BD%E6%95%B0 "总下载数"
-
-[license-url]: https://github.com/TC999/zed-loc/blob/master/LICENSE "许可证"
-[license-image]: https://custom-icon-badges.demolab.com/github/license/TC999/zed-loc?style=flat&logo=law&label=%E8%AE%B8%E5%8F%AF%E8%AF%81
-
-[zed-url]: https://github.com/zed-industries/zed
-[zed-issues-url]: https://github.com/zed-industries/zed/issues
+MIT ライセンス（[LICENSE](LICENSE)）。ベースツールの zed-loc と、Zed 本体のすべての貢献者に感謝します。
